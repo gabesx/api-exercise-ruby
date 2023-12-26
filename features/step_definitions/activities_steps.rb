@@ -3,9 +3,12 @@
 require 'httparty'
 require 'jsonpath'
 
-When(/^client send a GET request to "([^"]*)"$/) do |path|
-  path_with_id = path.gsub('{id}', instance_variable_get('@id').to_s)
-  @response = HTTParty.get("https://fakerestapi.azurewebsites.net#{path_with_id}")
+When(/^client sends a (GET|POST|PUT|DELETE) request to "([^"]*)"$/) do |method, path|
+  send_request(method, replace_path_parameters(path))
+end
+
+When(/^client sends a (GET|POST|PUT|DELETE) request to "([^"]*)" with body:$/) do |method, path, body|
+  send_request(method, replace_path_parameters(path), body)
 end
 
 Then(/^response status should be "([^"]*)"$/) do |expected_status|
@@ -14,19 +17,24 @@ Then(/^response status should be "([^"]*)"$/) do |expected_status|
 end
 
 When(/^client collects "([^"]+)" as "([^"]+)"$/) do |json_path, var_name|
-  raise 'No response returned!' if @response.nil? || @response.body.nil? || @response.body.empty?
+  if @response.body.nil? || @response.body.empty?
+    raise 'No response returned or response body is empty!'
+  end
 
   value = JsonPath.on(@response.parsed_response, json_path)
-  raise "No value found for JSON path #{json_path}" if value.empty?
+  if value.empty?
+    raise "No value found for JSON path #{json_path}"
+  end
 
-  instance_variable_set("@#{var_name}", value.first.to_s)
+  instance_variable_set("@#{var_name}", value.first)
 end
 
 Then(/^show me the response$/) do
-  puts @response
+  puts "Response Code: #{@response.code}"
+  puts "Response Headers: #{@response.headers}"
+  puts "Response Body: #{@response.body}"
 end
 
 And(/^the response should contain a list of activities$/) do
   expect(@response.parsed_response).to be_an_instance_of(Array)
 end
-
