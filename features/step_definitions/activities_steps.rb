@@ -38,3 +38,13 @@ end
 And(/^the response should contain a list of activities$/) do
   expect(@response.parsed_response).to be_an_instance_of(Array)
 end
+
+And(/^response header should have "([^"]*)" containing "([^"]*)"$/) do |header_name, expected_value|
+  actual_value = @response.headers[header_name.downcase]
+  expect(actual_value).to include(expected_value)
+end
+
+Then(/^the response should have "(.*?)"$/) do |expected_content|
+  expect(@response.body).to include(expected_content)
+end
+

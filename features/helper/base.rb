@@ -6,11 +6,12 @@ def send_request(method, path, body = nil)
   base_url = ENV['BASE_URL'] || 'https://fakerestapi.azurewebsites.net'
   url = "#{base_url}#{path}"
 
-  options = { headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' } }
+  headers = { 'Content-Type' => 'application/json', 'Accept' => 'application/json' }
+  options = { headers: headers }
 
   unless body.nil? || body.strip.empty?
-    # Ensure the body is a JSON string
-    options[:body] = body.strip.to_json
+    parsed_body = JSON.parse(body.strip)
+    options[:body] = parsed_body.to_json
   end
 
   @response = case method.upcase
@@ -25,9 +26,5 @@ def send_request(method, path, body = nil)
               else
                 raise "Unsupported HTTP method: #{method}"
               end
-end
-
-And(/^response header should have "([^"]*)" containing "([^"]*)"$/) do |header_name, expected_value|
-  actual_value = @response.headers[header_name.downcase]
-  expect(actual_value).to include(expected_value)
+      puts "Response Body: #{@response.body}"
 end
